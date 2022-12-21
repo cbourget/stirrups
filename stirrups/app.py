@@ -62,7 +62,11 @@ class App:
         iface: Optional[Any] = None,
         context: Optional[Type['Context']] = None
     ):
-        injectable = item if isinstance(item, Instance) else Instance(item)
+        if isinstance(item, Instance):
+            injectable = item
+        else:
+            injectable = Instance(item)
+
         self.register(
             injectable,
             aslist=aslist,
@@ -83,10 +87,13 @@ class App:
         iface: Optional[Any] = None,
         context: Optional[Type['Context']] = None
     ):
-        injectable = item if isinstance(item, Injectable) else injectable_factory(
-            item,
-            cache=cache
-        )
+        if isinstance(item, Injectable):
+            injectable = item
+        else:
+            injectable = injectable_factory(
+                item,
+                cache=cache
+            )
         return self.register(
             injectable,
             aslist=aslist,

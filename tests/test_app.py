@@ -17,7 +17,6 @@ class TestCreateContext:
     class _Context(Context):
         pass
 
-
     def test_create_context(self, app: App):
         context = app.create_context(self._Context)
         assert isinstance(context, self._Context)
@@ -38,7 +37,6 @@ class TestRegistration:
     class _DataClassA:
         pass
 
-
     def test_register_instance(self, app: App):
         a = self._ClassA()
         app.instance(a, iface=self._IClass)
@@ -55,7 +53,7 @@ class TestRegistration:
     def test_register_factory_function(self, app: App):
         def a_factory(context: Context) -> TestRegistration._ClassA:
             return self._ClassA()
-    
+
         app.factory(a_factory, iface=self._IClass)
         context = app.create_context(Context)
         a = context.get(self._IClass)
@@ -76,7 +74,7 @@ class TestRegistration:
     def test_register_in_context(self, app: App):
         def a_factory(context: Context) -> TestRegistration._ClassA:
             return self._ClassA()
-    
+
         app.factory(
             a_factory,
             iface=self._IClass,
@@ -139,7 +137,6 @@ class TestInjection:
         def __init__(self, deps_a: 'TestInjection._DepsA'):
             self.deps_a = deps_a
 
-
     def test_inject_factory_function(self, app: App):
         def deps_a_factory() -> TestInjection._DepsA:
             return self._DepsA()
@@ -149,7 +146,7 @@ class TestInjection:
             deps_a: TestInjection._DepsA,
         ) -> TestInjection._ClassA:
             return self._ClassA(v, deps_a)
-    
+
         app.factory(deps_a_factory, iface=self._DepsA)
         app.factory(a_factory, iface=self._IClass)
 
@@ -166,7 +163,7 @@ class TestInjection:
 
         def a_factory(context) -> TestInjection._ClassA:
             return self._ClassA(1, context.get(self._DepsA))
-    
+
         app.factory(deps_a_factory, iface=self._DepsA)
         app.factory(a_factory, iface=self._IClass)
 
@@ -199,7 +196,7 @@ class TestInjection:
         # injected without a value for its `v` param.
         with pytest.raises(DependencyInjectionError):
             context.get(self._ClassB)
-    
+
         # Here, a is explicitely injected first then cached. This allows
         # b to be injected too. A different caching strategy could break this.
         a = context.get(self._ClassA, args=[1])

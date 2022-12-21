@@ -38,7 +38,6 @@ class TestInjection:
         def __init__(self, deps_b: 'TestInjection._DepsB'):
             self.deps_b = deps_b
 
-
     def test_inject_factory_function(self, context: Context):
         def deps_a_factory() -> TestInjection._DepsA:
             return self._DepsA()
@@ -48,7 +47,7 @@ class TestInjection:
             deps_a: TestInjection._DepsA,
         ) -> TestInjection._ClassA:
             return self._ClassA(v, deps_a)
-    
+
         context.factory(deps_a_factory, iface=self._DepsA)
         context.factory(a_factory, iface=self._IClass)
 
@@ -58,14 +57,17 @@ class TestInjection:
         assert a.v == 1
         assert a.deps_a == deps_a
 
-    def test_inject_factory_class_with_local_dependency(self, context: Context):
+    def test_inject_factory_class_with_local_dependency(
+        self,
+        context: Context
+    ):
         context.factory(TestInjection._ClassB)
 
         # DepsB is a dependency of ClassB but DepsB is not
         # registered
         with pytest.raises(DependencyInjectionError):
             context.get(self._ClassB)
-    
+
         # Here, DepsB is registered directly on the context before
         # getting ClassB
         context.factory(self._DepsB)

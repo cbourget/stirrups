@@ -5,12 +5,12 @@ from setuptools import (
 
 
 package_name = 'stirrups'
-version = '0.1.2'
+version = '0.1.3'
 url = 'https://github.com/cbourget/stirrups'
 
 install_requires = []
 
-extras_require={
+extras_require = {
     'tests': [
         'pytest',
         'coverage',
@@ -29,7 +29,7 @@ setup(
     license='MIT',
     url=url,
     download_url='{}/archive/{}.tar.gz'.format(url, version),
-    keywords = 'dependency injection',
+    keywords='dependency injection',
     packages=find_packages(exclude=['contrib', 'docs', 'tests*']),
     classifiers=[
         'Development Status :: 3 - Alpha',

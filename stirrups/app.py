@@ -5,6 +5,7 @@ from typing import Any, Dict, Callable, Iterable, Optional, Type, Union
 from .context import Context, ContextType
 from .exceptions import (
     AppMountedError,
+    AppNotMountedError,
     ItemNotFound,
     IncludeModuleError,
 )
@@ -112,7 +113,7 @@ class App:
         kwargs: Optional[Dict[str, Any]] = None,
     ) -> ContextType:
         if not self._mounted:
-            self.mount()
+            raise AppNotMountedError()
 
         context_ifaces = set([Context] + list(ifaces or [context_cls]))
         providers = [
@@ -127,6 +128,9 @@ class App:
         return context
 
     def include(self, path: str, *args: Any, **kwargs: Any):
+        if self._mounted:
+            raise AppMountedError()
+
         if path.startswith('.'):
             origin = inspect.stack()[1]
             here = inspect.getmodule(origin[0])
@@ -139,13 +143,11 @@ class App:
             mount = getattr(module, mount_name)
         except AttributeError:
             raise IncludeModuleError(module, mount_name)
-        self._includes.append((path, mount, args, kwargs))
-        # module.mount(self, *args, **kwargs)
-        # self._includes.append(path)
+
+        mount(self, *args, **kwargs)
+        self._includes.append(path)
 
     def mount(self):
-        for path, mount, args, kwargs in self._includes:
-            mount(self, *args, **kwargs)
         self._mounted = True
 
     def _get_context_provider(self, ctx_iface: Type[Context]) -> Provider:

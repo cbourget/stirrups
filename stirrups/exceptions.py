@@ -27,6 +27,14 @@ class AppMountedError(StirrupsError):
         )
 
 
+class AppNotMountedError(StirrupsError):
+
+    def __init__(self):
+        super().__init__(
+            'App is not mounted. Call app.mount() before proceeding.'
+        )
+
+
 class InjectionError(StirrupsError):
 
     def __init__(self, iface: Any, *, name: Union[str, None]):

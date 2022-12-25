@@ -24,6 +24,7 @@ from .exceptions import (
     ItemNotFound,
     WrapperDescriptorError
 )
+from .logging import logger
 from .utils import param_is_positionnal, param_is_variable
 
 if TYPE_CHECKING:
@@ -140,9 +141,12 @@ class FunctionFactory(Factory[ItemType]):
         func = self.item
         try:
             hints = get_type_hints(func)
-        except TypeError as exc:
-            # TODO: handle better
-            print(f'WARNING: {exc}')
+        except TypeError:
+            func_name = func.__name__
+            logger.warn(
+                f'Failed to retrieve type hints from function {func_name}',
+                exc_info=True
+            )
             hints = {}
 
         signature = inspect.signature(func)
@@ -229,9 +233,12 @@ class ClassFactory(Factory[ItemType]):
         signature = inspect.signature(constructor)
         try:
             hints = get_type_hints(constructor)
-        except TypeError as exc:
-            # TODO: handle better
-            print(f'WARNING: {exc}')
+        except TypeError:
+            class_name = cls.__name__
+            logger.warn(
+                f'Failed to retrieve type hints from class {class_name}',
+                exc_info=True
+            )
             hints = {}
 
         params = [
@@ -248,13 +255,16 @@ class ClassFactory(Factory[ItemType]):
         return computed
 
     def _compute_class_hints(self) -> Dict[str, Any]:
-        # TODO: Should injectable params be annotated as such?
+        # TODO: Should injectable params be defined as such?
         cls = self.item
         try:
             hints = get_type_hints(cls)
-        except TypeError as exc:
-            # TODO: handle better
-            print(f'WARNING: {exc}')
+        except TypeError:
+            class_name = cls.__name__
+            logger.warn(
+                f'Failed to retrieve type hints from class {class_name}',
+                exc_info=True
+            )
             hints = {}
         return hints
 

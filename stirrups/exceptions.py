@@ -35,6 +35,14 @@ class AppNotMountedError(StirrupsError):
         )
 
 
+class ContextNotMountedError(StirrupsError):
+
+    def __init__(self):
+        super().__init__(
+            'Context is not mounted. Call context.mount() before proceeding.'
+        )
+
+
 class InjectionError(StirrupsError):
 
     def __init__(self, iface: Any, *, name: Union[str, None]):

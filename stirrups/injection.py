@@ -11,6 +11,7 @@ from typing import (
     List,
     Tuple,
     Type,
+    TypedDict,
     TypeVar,
     Union,
     get_type_hints
@@ -32,6 +33,12 @@ if TYPE_CHECKING:
 
 
 ItemType = TypeVar('ItemType')
+
+InjectableMeta = TypedDict(
+    'InjectableMeta',
+    key=str,
+    item='Injectable',
+)
 
 
 def _get_param_value(
@@ -65,6 +72,9 @@ def _get_value_from_context(iface: Any, context: 'Context') -> Any:
 class Injectable(Generic[ItemType], metaclass=abc.ABCMeta):
     item: Any
 
+    def __str__(self):
+        return str(self.item)
+
     @abc.abstractmethod
     def __call__(
         self,
@@ -73,6 +83,10 @@ class Injectable(Generic[ItemType], metaclass=abc.ABCMeta):
         kwargs: Dict
     ) -> ItemType:
         pass
+
+    @abc.abstractproperty
+    def dependencies(self) -> List[Tuple[str, Any]]:
+        ...
 
     def get_cache_key(
         self,
@@ -93,6 +107,10 @@ class Instance(Injectable[ItemType]):
         kwargs: Dict
     ) -> ItemType:
         return self.item
+
+    @property
+    def dependencies(self) -> List[Tuple[str, Any]]:
+        return []
 
 
 class Factory(Injectable[ItemType]):
@@ -136,6 +154,10 @@ class FunctionFactory(Factory[ItemType]):
         func = self.item
         self._inject_func_params(args, kwargs, context)
         return func(*args, **kwargs)
+
+    @property
+    def dependencies(self) -> List[Tuple[str, Any]]:
+        return [(param.name, iface) for param, iface in self.params]
 
     def _compute_params(self) -> List[Tuple[inspect.Parameter, Any]]:
         func = self.item
@@ -225,6 +247,13 @@ class ClassFactory(Factory[ItemType]):
             post_init()
 
         return instance
+
+    @property
+    def dependencies(self) -> List[Tuple[str, Any]]:
+        return [
+            *((param.name, iface) for param, iface in self.params),
+            *((key, value) for key, value in self.hints.items())
+        ]
 
     def _compute_params(self) -> List[Tuple[inspect.Parameter, Any]]:
         cls = self.item
@@ -340,6 +369,10 @@ class DataclassFactory(Factory[ItemType]):
         self._inject_dataclass_hints(kwargs, context)
         return datacls(**kwargs)
 
+    @property
+    def dependencies(self) -> List[Tuple[str, Any]]:
+        return [(key, value) for key, value in self.hints.items()]
+
     def _compute_dataclass_hints(self) -> Dict[str, Any]:
         datacls = self.item
         fields = dataclasses.fields(datacls)
@@ -375,10 +408,21 @@ def injectable_factory(
     return injectable_cls(factory, cache=cache)
 
 
+def generate_iface_key(iface: Any) -> str:
+    if inspect.isclass(iface):
+        base = iface.__name__
+    else:
+        base = str(iface)
+    return base.replace('.', ':').replace('\'', '')
+
+
 class Registry(Generic[ItemType]):
 
     def __init__(self):
         self._items = {}
+
+    def dict(self) -> Dict[str, Union[ItemType, List[ItemType]]]:
+        return self._items
 
     def get(self, key: str) -> ItemType:
         try:
@@ -428,9 +472,6 @@ class Registry(Generic[ItemType]):
         except KeyError:
             pass
 
-    def inspect(self) -> Dict[str, ItemType]:
-        return self._items
-
 
 class Provider(Generic[ItemType]):
 
@@ -443,7 +484,7 @@ class Provider(Generic[ItemType]):
         *,
         name: Union[str, None]
     ) -> Injectable[ItemType]:
-        key = name or self._generate_key(iface)
+        key = name or generate_iface_key(iface)
         return self._injectables.get(key)
 
     def get_list(
@@ -452,7 +493,7 @@ class Provider(Generic[ItemType]):
         *,
         name: Union[str, None]
     ) -> List[Injectable[ItemType]]:
-        key = name or self._generate_key(iface)
+        key = name or generate_iface_key(iface)
         return self._injectables.get_list(key)
 
     def register(
@@ -465,7 +506,7 @@ class Provider(Generic[ItemType]):
         iface: Union[Any, None]
     ):
         iface = iface or injectable.item
-        key = name or self._generate_key(iface)
+        key = name or generate_iface_key(iface)
         return self._injectables.register(
             injectable,
             key,
@@ -473,15 +514,14 @@ class Provider(Generic[ItemType]):
             aslist=aslist
         )
 
-    def _generate_key(self, iface: Any) -> str:
-        if inspect.isclass(iface):
-            base = iface.__name__
-        else:
-            base = str(iface)
-        return base.replace('.', ':').replace('\'', '')
-
-    def inspect(self) -> Dict[str, Injectable]:
-        return self._injectables.inspect()
+    def describe_injectables(self) -> List[InjectableMeta]:
+        results = []
+        for key, item in self._injectables.dict().items():
+            results.append({
+                'key': key,
+                'item': item,
+            })
+        return results
 
 
 class Injector(Generic[ItemType]):
@@ -578,9 +618,3 @@ class Injector(Generic[ItemType]):
         kwargs: Dict[str, Any]
     ) -> ItemType:
         return injectable(self._context, args, kwargs)
-
-    def inspect(self) -> Dict[str, Injectable]:
-        result = {}
-        for provider in self._providers:
-            result.update(provider.inspect())
-        return result

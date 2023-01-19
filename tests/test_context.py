@@ -1,6 +1,6 @@
 import pytest
 
-from stirrups.app import Context
+from stirrups.app import App, Context
 from stirrups.exceptions import DependencyInjectionError
 
 
@@ -73,3 +73,92 @@ class TestInjection:
         context.factory(self._DepsB)
         b = context.get(self._ClassB)
         assert isinstance(b, self._ClassB)
+
+
+class TestInspect:
+
+    class _ClassC:
+        pass
+
+    class _ClassC1:
+        pass
+
+    class _ClassC2:
+        pass
+
+    def test_get_dependencies(self, app: App):
+        app.factory(TestInjection._DepsA)
+        app.factory(TestInjection._ClassA)
+        app.factory(TestInjection._DepsB)
+        app.factory(TestInjection._ClassB)
+
+        # Test different classes registered on same iface as list
+        app.factory(
+            TestInspect._ClassC1,
+            iface=TestInspect._ClassC,
+            aslist=True
+        )
+        app.factory(
+            TestInspect._ClassC2,
+            iface=TestInspect._ClassC,
+            aslist=True
+        )
+        app.mount()
+
+        context = app.create_context(Context)
+        inspect_result = context.inspect()
+        inspect_dict = inspect_result.to_dict()
+        expected_dict = {
+            'Context': {
+                'deps': [],
+                'key': 'Context',
+                'item': str(context)
+            },
+            '_DepsA': {
+                'deps': [],
+                'key': '_DepsA',
+                'item': str(TestInjection._DepsA)
+            },
+            '_ClassA': {
+                'deps': [
+                    {
+                        'param': 'v',
+                        'key': 'int'
+                    },
+                    {
+                        'param': 'deps_a',
+                        'key': '_DepsA'
+                    }
+                ],
+                'key': '_ClassA',
+                'item': str(TestInjection._ClassA)
+            },
+            '_DepsB': {
+                'deps': [],
+                'key': '_DepsB',
+                'item': str(TestInjection._DepsB)
+            },
+            '_ClassB': {
+                'deps': [
+                    {
+                        'param': 'deps_b',
+                        'key': '_DepsB'
+                    }
+                ],
+                'key': '_ClassB',
+                'item': str(TestInjection._ClassB)
+            },
+            '_ClassC': [
+                {
+                    'deps': [],
+                    'key': '_ClassC',
+                    'item': str(self._ClassC1)
+                },
+                {
+                    'deps': [],
+                    'key': '_ClassC',
+                    'item': str(self._ClassC2)
+                }
+            ]
+        }
+        assert inspect_dict == expected_dict

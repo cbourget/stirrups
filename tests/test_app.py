@@ -204,7 +204,7 @@ class TestInjection:
         assert a.deps_a == deps_a
 
     def test_inject_factory_class_with_annotations(self, app: App):
-        app.factory(TestInjection._DepsA, iface=self._DepsA)
+        app.factory(TestInjection._DepsA)
         app.factory(TestInjection._ClassA)
         app.factory(TestInjection._ClassB)
         app.mount()

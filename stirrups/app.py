@@ -27,7 +27,7 @@ class App:
     ):
         self._mount = mount
         self._mounted = False
-        self._providers = Registry()
+        self._providers = Registry[Provider]()
         self._includes = []
 
     def register(

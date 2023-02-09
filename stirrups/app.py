@@ -2,7 +2,7 @@ import inspect
 
 from typing import Any, Dict, Callable, Iterable, Optional, Type, Union
 
-from .context import Context, ContextType
+from .context import ContextType
 from .exceptions import (
     AppMountedError,
     AppNotMountedError,
@@ -17,6 +17,9 @@ from .injection import (
     Registry,
     injectable_factory
 )
+
+
+ROOT = '__root'
 
 
 class App:
@@ -38,13 +41,12 @@ class App:
         force: bool = False,
         name: Optional[str] = None,
         iface: Optional[Any] = None,
-        context: Optional[Type['Context']] = None
+        scope: Optional[str] = None
     ):
         if self._mounted:
             raise AppMountedError()
 
-        context = context or Context
-        provider = self._get_context_provider(context)
+        provider = self._get_scope_provider(scope or ROOT)
         provider.register(
             injectable,
             name=name,
@@ -61,7 +63,7 @@ class App:
         force: bool = False,
         name: Optional[str] = None,
         iface: Optional[Any] = None,
-        context: Optional[Type['Context']] = None
+        scope: Optional[str] = None
     ):
         if isinstance(item, Instance):
             injectable = item
@@ -74,7 +76,7 @@ class App:
             force=force,
             name=name,
             iface=iface,
-            context=context
+            scope=scope
         )
 
     def factory(
@@ -86,7 +88,7 @@ class App:
         cache: bool = True,
         name: Optional[str] = None,
         iface: Optional[Any] = None,
-        context: Optional[Type['Context']] = None
+        scope: Optional[str] = None
     ):
         if isinstance(item, Injectable):
             injectable = item
@@ -101,23 +103,23 @@ class App:
             force=force,
             name=name,
             iface=iface,
-            context=context
+            scope=scope
         )
 
     def create_context(
         self,
         context_cls: Type[ContextType],
         *,
-        ifaces: Optional[Iterable[Type['Context']]] = None,
+        scopes: Optional[Iterable[str]] = None,
         args: Optional[Iterable[Any]] = None,
         kwargs: Optional[Dict[str, Any]] = None,
     ) -> ContextType:
         if not self._mounted:
             raise AppNotMountedError()
 
-        context_ifaces = set([Context] + list(ifaces or [context_cls]))
+        scopes = set([ROOT] + list(scopes or []))
         providers = [
-            self._get_context_provider(iface) for iface in context_ifaces
+            self._get_scope_provider(scope) for scope in scopes
         ]
 
         args = list(args) if args else []
@@ -150,21 +152,16 @@ class App:
     def mount(self):
         self._mounted = True
 
-    def _get_context_provider(self, ctx_iface: Type[Context]) -> Provider:
-        ctx_iface = ctx_iface or Context
-        key = self._generate_context_key(ctx_iface)
+    def _get_scope_provider(self, scope: str) -> Provider:
         try:
-            provider = self._providers.get(key)
+            provider = self._providers.get(scope)
         except ItemNotFound:
-            provider = Provider()
+            provider = Provider(scope)
             self._providers.register(
                 provider,
-                key,
+                scope,
                 aslist=False,
                 force=False,
             )
 
         return provider
-
-    def _generate_context_key(self, ctx_iface: Type[Context]) -> str:
-        return str(ctx_iface).replace('.', ':').replace('\'', '')

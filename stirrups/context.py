@@ -45,9 +45,6 @@ class InspectContextResult:
     def __init__(self, injectables: Dict[str, InjectableMeta]):
         self.injectables = injectables
 
-    def __str__(self) -> str:
-        return str(self.injectables)
-
     def to_dict(self) -> Dict[str, InspectContextDictItem]:
         dic = {}
         for key, injectable_meta in self.injectables.items():
@@ -86,7 +83,7 @@ class Context:
 
     def __init__(self, *args: Any, **kwargs: Any):
         self._mounted = False
-        self.local_provider = Provider()
+        self.local_provider = Provider('local')
         self.local_provider.register(
             Instance(self),
             aslist=False,

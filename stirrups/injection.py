@@ -475,8 +475,9 @@ class Registry(Generic[ItemType]):
 
 class Provider(Generic[ItemType]):
 
-    def __init__(self):
-        self._injectables = Registry[Injectable]()
+    def __init__(self, name: str):
+        self.name = name
+        self.items = Registry[Injectable]()
 
     def get(
         self,
@@ -485,7 +486,7 @@ class Provider(Generic[ItemType]):
         name: Union[str, None]
     ) -> Injectable[ItemType]:
         key = name or generate_iface_key(iface)
-        return self._injectables.get(key)
+        return self.items.get(key)
 
     def get_list(
         self,
@@ -494,7 +495,7 @@ class Provider(Generic[ItemType]):
         name: Union[str, None]
     ) -> List[Injectable[ItemType]]:
         key = name or generate_iface_key(iface)
-        return self._injectables.get_list(key)
+        return self.items.get_list(key)
 
     def register(
         self,
@@ -507,7 +508,7 @@ class Provider(Generic[ItemType]):
     ):
         iface = iface or injectable.item
         key = name or generate_iface_key(iface)
-        return self._injectables.register(
+        return self.items.register(
             injectable,
             key,
             force=force,
@@ -516,7 +517,7 @@ class Provider(Generic[ItemType]):
 
     def describe_injectables(self) -> List[InjectableMeta]:
         results = []
-        for key, item in self._injectables.dict().items():
+        for key, item in self.items.dict().items():
             results.append({
                 'key': key,
                 'item': item,

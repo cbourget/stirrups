@@ -2,7 +2,8 @@ import pytest
 
 from dataclasses import dataclass
 
-from stirrups.app import App, Context
+from stirrups.app import App
+from stirrups.context import Context
 from stirrups.exceptions import (
     AppMountedError,
     AppNotMountedError,
@@ -82,17 +83,19 @@ class TestRegistration:
         a = context.get(self._IClass)
         assert isinstance(a, self._DataClassA)
 
-    def test_register_in_context(self, app: App):
-        def a_factory(context: Context) -> TestRegistration._ClassA:
+    def test_register_in_scope(self, app: App):
+        scope = 'test'
+
+        def a_factory() -> TestRegistration._ClassA:
             return self._ClassA()
 
         app.factory(
             a_factory,
             iface=self._IClass,
-            context=TestCreateContext._Context
+            scope=scope
         )
         app.mount()
-        _context = app.create_context(TestCreateContext._Context)
+        _context = app.create_context(Context, scopes=[scope])
         a = _context.get(self._IClass)
         assert isinstance(a, self._ClassA)
 

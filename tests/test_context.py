@@ -1,6 +1,7 @@
 import pytest
 
-from stirrups.app import App, Context
+from stirrups.app import App
+from stirrups.context import Context
 from stirrups.exceptions import DependencyInjectionError
 
 

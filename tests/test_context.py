@@ -104,7 +104,6 @@ class TestInspect:
             iface=TestInspect._ClassC,
             aslist=True
         )
-        app.mount()
 
         context = app.create_context(Context)
         inspect_result = context.inspect()

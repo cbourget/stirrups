@@ -14,6 +14,7 @@ from typing import (
     TypedDict,
     TypeVar,
     Union,
+    cast,
     get_type_hints
 )
 
@@ -405,7 +406,10 @@ def injectable_factory(
         injectable_cls = ClassFactory
     else:
         injectable_cls = FunctionFactory
-    return injectable_cls(factory, cache=cache)
+    return injectable_cls(
+        cast(Callable[..., Any], factory),
+        cache=cache
+    )
 
 
 def generate_iface_key(iface: Any) -> str:
@@ -483,18 +487,18 @@ class Provider(Generic[ItemType]):
         self,
         iface: Type[ItemType],
         *,
-        name: Union[str, None]
+        key: Union[str, None]
     ) -> Injectable[ItemType]:
-        key = name or generate_iface_key(iface)
+        key = key or generate_iface_key(iface)
         return self.items.get(key)
 
     def get_list(
         self,
         iface: Type[ItemType],
         *,
-        name: Union[str, None]
+        key: Union[str, None]
     ) -> List[Injectable[ItemType]]:
-        key = name or generate_iface_key(iface)
+        key = key or generate_iface_key(iface)
         return self.items.get_list(key)
 
     def register(
@@ -503,11 +507,11 @@ class Provider(Generic[ItemType]):
         *,
         aslist: bool,
         force: bool,
-        name: Union[str, None],
+        key: Union[str, None],
         iface: Union[Any, None]
     ):
         iface = iface or injectable.item
-        key = name or generate_iface_key(iface)
+        key = key or generate_iface_key(iface)
         return self.items.register(
             injectable,
             key,
@@ -536,27 +540,27 @@ class Injector(Generic[ItemType]):
         self,
         iface: Type[ItemType],
         *,
-        name: Union[str, None],
+        key: Union[str, None],
         args: List[Any],
         kwargs: Dict[str, Any]
     ) -> ItemType:
         for provider in self._providers:
             try:
                 return self._inject(
-                    provider.get(iface, name=name),
+                    provider.get(iface, key=key),
                     args,
                     kwargs
                 )
             except ItemNotFound:
                 pass
 
-        raise InjectionError(iface, name=name)
+        raise InjectionError(iface, key=key)
 
     def get_list(
         self,
         iface: Type[ItemType],
         *,
-        name: Union[str, None],
+        key: Union[str, None],
         args: List[Any],
         kwargs: Dict[str, Any]
     ) -> List[ItemType]:
@@ -568,12 +572,12 @@ class Injector(Generic[ItemType]):
                         args,
                         kwargs
                     )
-                    for injectable in provider.get_list(iface, name=name)
+                    for injectable in provider.get_list(iface, key=key)
                 ]
             except ItemNotFound:
                 pass
 
-        raise InjectionError(iface, name=name)
+        raise InjectionError(iface, key=key)
 
     def _cache(self, key: str, instance: ItemType):
         self._cached.register(

@@ -88,7 +88,7 @@ class Context:
             Instance(self),
             aslist=False,
             force=False,
-            name=None,
+            key=None,
             iface=self.__class__,
         )
 
@@ -103,13 +103,13 @@ class Context:
         *,
         aslist: bool = False,
         force: bool = False,
-        name: Optional[str] = None,
+        key: Optional[str] = None,
         iface: Optional[Any] = None,
     ):
         provider = self.local_provider
         provider.register(
             injectable,
-            name=name,
+            key=key,
             iface=iface,
             force=force,
             aslist=aslist
@@ -121,7 +121,7 @@ class Context:
         *,
         aslist: bool = False,
         force: bool = False,
-        name: Optional[str] = None,
+        key: Optional[str] = None,
         iface: Optional[Any] = None,
     ):
         if isinstance(item, Instance):
@@ -133,7 +133,7 @@ class Context:
             injectable,
             aslist=aslist,
             force=force,
-            name=name,
+            key=key,
             iface=iface,
         )
 
@@ -144,7 +144,7 @@ class Context:
         aslist: bool = False,
         force: bool = False,
         cache: bool = True,
-        name: Optional[str] = None,
+        key: Optional[str] = None,
         iface: Optional[Any] = None,
     ):
         if isinstance(item, Injectable):
@@ -158,7 +158,7 @@ class Context:
             injectable,
             aslist=aslist,
             force=force,
-            name=name,
+            key=key,
             iface=iface,
         )
 
@@ -183,7 +183,7 @@ class Context:
         self,
         iface: Type[ItemType],
         *,
-        name: Optional[str] = None,
+        key: Optional[str] = None,
         args: Optional[List[Any]] = None,
         kwargs: Optional[Dict[str, Any]] = None
     ) -> ItemType:
@@ -194,7 +194,7 @@ class Context:
         kwargs = kwargs or {}
         return self.injector.get(
             iface,
-            name=name,
+            key=key,
             args=[*args],
             kwargs={**kwargs}
         )
@@ -203,7 +203,7 @@ class Context:
         self,
         iface: Type[ItemType],
         *,
-        name: Optional[str] = None,
+        key: Optional[str] = None,
         args: Optional[List[Any]] = None,
         kwargs: Optional[Dict[str, Any]] = None
     ) -> List[ItemType]:
@@ -214,7 +214,7 @@ class Context:
         kwargs = kwargs or {}
         return self.injector.get_list(
             iface,
-            name=name,
+            key=key,
             args=[*args],
             kwargs={**kwargs}
         )

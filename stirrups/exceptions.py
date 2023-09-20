@@ -19,22 +19,6 @@ class IncludeModuleError(StirrupsError):
         self.mount = mount
 
 
-class AppMountedError(StirrupsError):
-
-    def __init__(self):
-        super().__init__(
-            'App is already mounted and closed for registration.'
-        )
-
-
-class AppNotMountedError(StirrupsError):
-
-    def __init__(self):
-        super().__init__(
-            'App is not mounted. Call app.mount() before proceeding.'
-        )
-
-
 class ContextNotMountedError(StirrupsError):
 
     def __init__(self):
@@ -45,20 +29,20 @@ class ContextNotMountedError(StirrupsError):
 
 class InjectionError(StirrupsError):
 
-    def __init__(self, iface: Any, *, name: Union[str, None]):
+    def __init__(self, iface: Any, *, key: Union[str, None]):
         msg = f'Failed to inject: {str(iface)}'
-        if name:
-            msg = f'{msg} with name: {name}'
+        if key:
+            msg = f'{msg} with key: {key}'
         super().__init__(f'{msg}.')
         self.iface = iface
-        self.name = name
+        self.key = key
 
 
 class DependencyInjectionError(StirrupsError):
 
-    def __init__(self, name: str, iface: Any):
+    def __init__(self, key: str, iface: Any):
         super().__init__(
-            'Failed to inject dependency: {}: {}.'.format(name, str(iface))
+            'Failed to inject dependency: {}: {}.'.format(key, str(iface))
         )
         self.iface = iface
 

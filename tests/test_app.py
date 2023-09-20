@@ -5,8 +5,6 @@ from dataclasses import dataclass
 from stirrups.app import App
 from stirrups.context import Context
 from stirrups.exceptions import (
-    AppMountedError,
-    AppNotMountedError,
     DependencyInjectionError,
     ItemExists,
     InjectionError,
@@ -20,13 +18,8 @@ class TestCreateContext:
         pass
 
     def test_create_context(self, app: App):
-        app.mount()
         context = app.create_context(self._Context)
         assert isinstance(context, self._Context)
-
-    def test_create_context_unmounted(self, app: App):
-        with pytest.raises(AppNotMountedError):
-            app.create_context(self._Context)
 
 
 class TestRegistration:
@@ -47,38 +40,33 @@ class TestRegistration:
     def test_register_instance(self, app: App):
         a = self._ClassA()
         app.instance(a, iface=self._IClass)
-        app.mount()
         context = app.create_context(Context)
         assert context.get(self._IClass) == a
 
-    def test_register_named_instance(self, app: App):
-        name = 'a'
+    def test_register_instance_with_key(self, app: App):
+        key = 'a'
         a = self._ClassA()
-        app.instance(a, iface=self._IClass, name=name)
-        app.mount()
+        app.instance(a, iface=self._IClass, key=key)
         context = app.create_context(Context)
-        assert context.get(self._IClass, name=name) == a
+        assert context.get(self._IClass, key=key) == a
 
     def test_register_factory_function(self, app: App):
         def a_factory(context: Context) -> TestRegistration._ClassA:
             return self._ClassA()
 
         app.factory(a_factory, iface=self._IClass)
-        app.mount()
         context = app.create_context(Context)
         a = context.get(self._IClass)
         assert isinstance(a, self._ClassA)
 
     def test_register_factory_class(self, app: App):
         app.factory(self._ClassA, iface=self._IClass)
-        app.mount()
         context = app.create_context(Context)
         a = context.get(self._IClass)
         assert isinstance(a, self._ClassA)
 
     def test_register_factory_dataclass(self, app: App):
         app.factory(self._DataClassA, iface=self._IClass)
-        app.mount()
         context = app.create_context(Context)
         a = context.get(self._IClass)
         assert isinstance(a, self._DataClassA)
@@ -94,7 +82,6 @@ class TestRegistration:
             iface=self._IClass,
             scope=scope
         )
-        app.mount()
         _context = app.create_context(Context, scopes=[scope])
         a = _context.get(self._IClass)
         assert isinstance(a, self._ClassA)
@@ -106,14 +93,12 @@ class TestRegistration:
     def test_register_aslist(self, app: App):
         app.factory(self._ClassA, iface=self._IClass, aslist=True)
         app.factory(self._ClassB, iface=self._IClass, aslist=True)
-        app.mount()
         context = app.create_context(Context)
         values = context.get_list(self._IClass)
         assert len(values) == 2
 
     def test_register_no_iface(self, app: App):
         app.factory(self._ClassA)
-        app.mount()
         context = app.create_context(Context)
         a = context.get(self._ClassA)
         assert isinstance(a, self._ClassA)
@@ -124,16 +109,9 @@ class TestRegistration:
             app.factory(self._ClassB, iface=self._IClass)
 
         app.factory(self._ClassB, iface=self._IClass, force=True)
-        app.mount()
         context = app.create_context(Context)
         b = context.get(self._IClass)
         assert isinstance(b, self._ClassB)
-
-    def test_register_mounted(self, app: App):
-        app.mount()
-        a = self._ClassA()
-        with pytest.raises(AppMountedError):
-            app.instance(a, iface=self._IClass)
 
 
 class TestInjection:
@@ -167,7 +145,6 @@ class TestInjection:
 
         app.factory(deps_a_factory, iface=self._DepsA)
         app.factory(a_factory, iface=self._IClass)
-        app.mount()
 
         context = app.create_context(Context)
         a = context.get(self._IClass, args=[1])
@@ -185,7 +162,6 @@ class TestInjection:
 
         app.factory(deps_a_factory, iface=self._DepsA)
         app.factory(a_factory, iface=self._IClass)
-        app.mount()
 
         context = app.create_context(Context)
         a = context.get(self._IClass)
@@ -197,7 +173,6 @@ class TestInjection:
     def test_intect_factory_class(self, app: App):
         app.factory(TestInjection._DepsA, iface=self._DepsA)
         app.factory(TestInjection._ClassA)
-        app.mount()
 
         context = app.create_context(Context)
         a = context.get(self._ClassA, args=[1])
@@ -210,7 +185,6 @@ class TestInjection:
         app.factory(TestInjection._DepsA)
         app.factory(TestInjection._ClassA)
         app.factory(TestInjection._ClassB)
-        app.mount()
 
         context = app.create_context(Context)
 
@@ -236,9 +210,4 @@ class TestInclude:
     def test_include_invalid(self):
         app = App(mount='foo')
         with pytest.raises(IncludeModuleError):
-            app.include('stirrups')
-
-    def test_include_mounted(self, app: App):
-        app.mount()
-        with pytest.raises(AppMountedError):
             app.include('stirrups')

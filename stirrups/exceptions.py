@@ -19,14 +19,6 @@ class IncludeModuleError(StirrupsError):
         self.mount = mount
 
 
-class ContextNotMountedError(StirrupsError):
-
-    def __init__(self):
-        super().__init__(
-            'Context is not mounted. Call context.mount() before proceeding.'
-        )
-
-
 class InjectionError(StirrupsError):
 
     def __init__(self, iface: Any, *, key: Union[str, None]):

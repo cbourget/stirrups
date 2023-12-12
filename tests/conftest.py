@@ -11,6 +11,5 @@ def app():
 
 @pytest.fixture(scope='function')
 def context():
-    context = Context()
-    context.mount()
+    context = Context(providers=[])
     return context

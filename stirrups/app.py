@@ -151,7 +151,6 @@ class App:
         context_cls: Type[ContextType],
         *,
         scopes: Optional[Iterable[str]] = None,
-        args: Optional[Iterable[Any]] = None,
         kwargs: Optional[Dict[str, Any]] = None,
     ) -> ContextType:
         """Create a context class.
@@ -166,9 +165,6 @@ class App:
                 If provided, only the components of those scopes will
                 be available fore injection.
                 Defaults to None.
-            args (Optional[Iterable[Any]], optional):
-                Arguments passed to the context class.
-                Defaults to None.
             kwargs (Optional[Dict[str, Any]], optional):
                 Keyword arguments passed to the context class.
                 Defaults to None.
@@ -181,10 +177,8 @@ class App:
             self._get_scope_provider(scope) for scope in scopes
         ]
 
-        args = list(args) if args else []
         kwargs = dict(kwargs) if kwargs else {}
-        context = context_cls(*args, **kwargs)
-        context.mount(providers=providers)
+        context = context_cls(providers=providers, **kwargs)
 
         return context
 

@@ -10,7 +10,6 @@ from typing import (
     Union,
 )
 
-from .exceptions import ContextNotMountedError
 from .injection import (
     Factory,
     Injectable,
@@ -81,8 +80,13 @@ class InspectContextResult:
 class Context:
     injector: Injector
 
-    def __init__(self, *args: Any, **kwargs: Any):
-        self._mounted = False
+    def __init__(
+        self,
+        *,
+        providers: Optional[List[Provider]] = None,
+        **kwargs: Any
+    ):
+        providers = providers or []
         self.local_provider = Provider('local')
         self.local_provider.register(
             Instance(self),
@@ -91,11 +95,7 @@ class Context:
             key=None,
             iface=self.__class__,
         )
-
-    def mount(self, *, providers: Optional[List[Provider]] = None):
-        providers = providers or []
         self.injector = Injector([self.local_provider, *providers], self)
-        self._mounted = True
 
     def register(
         self,
@@ -168,9 +168,6 @@ class Context:
         args: Optional[List[Any]] = None,
         kwargs: Optional[Dict[str, Any]] = None
     ) -> ItemType:
-        if not self._mounted:
-            raise ContextNotMountedError()
-
         args = args or []
         kwargs = kwargs or {}
         return self.injector.resolve(
@@ -187,9 +184,6 @@ class Context:
         args: Optional[List[Any]] = None,
         kwargs: Optional[Dict[str, Any]] = None
     ) -> ItemType:
-        if not self._mounted:
-            raise ContextNotMountedError()
-
         args = args or []
         kwargs = kwargs or {}
         return self.injector.get(
@@ -207,9 +201,6 @@ class Context:
         args: Optional[List[Any]] = None,
         kwargs: Optional[Dict[str, Any]] = None
     ) -> List[ItemType]:
-        if not self._mounted:
-            raise ContextNotMountedError()
-
         args = args or []
         kwargs = kwargs or {}
         return self.injector.get_list(
